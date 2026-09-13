@@ -115,10 +115,13 @@ def _check_dangerous(cmd: str) -> str | None:
 def _update_cwd(command: str, current_cwd: str):
     """Track directory changes from cd commands, per thread."""
     # walk each cd in a && chain, resolving relative targets against the dir the
-    # previous cd landed in (not the original cwd) so `cd a && cd b` ends in a/b
+    # previous cd landed in (not the original cwd) so `cd a && cd b` ends in a/b.
+    # a parenthesized group is a subshell — `( cd a )` never changes this shell's
+    # cwd, so scrub those before scanning; `cd a; cd b` splits on `;` too.
+    scrubbed = re.sub(r"\([^()]*\)", " ", command)
     running = current_cwd
     changed = False
-    for part in command.split("&&"):
+    for part in re.split(r"&&|;", scrubbed):
         part = part.strip()
         if part.startswith("cd "):
             target = part[3:].strip().strip("'\"")

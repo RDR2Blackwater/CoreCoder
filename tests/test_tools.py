@@ -104,6 +104,34 @@ def test_bash_chained_cd_resolves_sequentially(tmp_path):
         bash_mod._local.cwd = saved
 
 
+def test_bash_semicolon_cd_chain_is_tracked(tmp_path):
+    """`cd a; cd b` is the same chain to the real shell: it must end in a/b."""
+    import corecoder.tools.bash as bash_mod
+
+    (tmp_path / "a" / "b").mkdir(parents=True)
+    saved = getattr(bash_mod._local, "cwd", None)
+    try:
+        bash_mod._local.cwd = None
+        bash_mod._update_cwd(f"cd {tmp_path}; cd a; cd b", str(tmp_path))
+        assert bash_mod._local.cwd == os.path.normpath(str(tmp_path / "a" / "b"))
+    finally:
+        bash_mod._local.cwd = saved
+
+
+def test_bash_subshell_cd_is_not_tracked(tmp_path):
+    """`( cd a )` runs in a subshell: the real cwd never moves, so neither does ours."""
+    import corecoder.tools.bash as bash_mod
+
+    (tmp_path / "a").mkdir()
+    saved = getattr(bash_mod._local, "cwd", None)
+    try:
+        bash_mod._local.cwd = None
+        bash_mod._update_cwd(f"( cd {tmp_path}/a ) && ls", str(tmp_path))
+        assert getattr(bash_mod._local, "cwd", None) is None
+    finally:
+        bash_mod._local.cwd = saved
+
+
 def test_bash_cwd_is_thread_local(tmp_path):
     """Parallel bash calls must not race on a shared cwd: each thread tracks its own."""
     import threading
