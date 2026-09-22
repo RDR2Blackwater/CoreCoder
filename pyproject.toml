@@ -2,6 +2,13 @@
 requires = ["hatchling"]
 build-backend = "hatchling.build"
 
+[tool.hatch.build]
+# Use Hatchling's import-hook editable mode instead of placing the source path
+# directly in a .pth file.  On Windows/Python < 3.13, .pth files are decoded
+# with the active ANSI code page, which breaks editable installs from Unicode
+# paths such as this repository's parent directory.
+dev-mode-exact = true
+
 [project]
 name = "corecoder"
 version = "0.6.0"

@@ -98,7 +98,15 @@ def _script(workdir: Path) -> list[LLMResponse]:
         ),
         LLMResponse(
             content="Running the suite.",
-            tool_calls=[ToolCall(id="p5", name="bash", arguments={"command": f"cd {workdir} && python -m pytest -q"})],
+            # On Windows, BashTool's shell=True uses cmd.exe. A plain `cd C:\...`
+            # does not switch away from another current drive (for example H:),
+            # which can make pytest run this repository recursively. Avoid shell
+            # cwd semantics and target the generated test with the same interpreter.
+            tool_calls=[ToolCall(
+                id="p5",
+                name="bash",
+                arguments={"command": f'"{sys.executable}" -m pytest "{workdir / "test_fib.py"}" -q'},
+            )],
         ),
         LLMResponse(
             content="Guard is in and both tests pass, including the new negative-n case."

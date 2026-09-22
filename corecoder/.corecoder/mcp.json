@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "firefox-devtools": {
+      "command": "npx",
+      "args": ["-y", "@mozilla/firefox-devtools-mcp@latest", "--headless", "--viewport", "1280x720"],
+      "env": {
+        "START_URL": "about:blank"
+      }
+    },
+    "mcp-hello-world": {
+      "command": "npx",
+      "args": ["-y", "mcp-hello-world"]
+    }
+  }
+}

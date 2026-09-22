@@ -434,3 +434,10 @@ def test_todo_write_bad_call_keeps_old_list():
     todo.execute(tasks=[{"content": "keep me", "status": "pending"}])
     todo.execute(tasks=[{"content": "bad", "status": "nope"}])
     assert "keep me" in todo.render()
+
+
+# --- fetch tool ---
+def test_fetch_rejects_non_http():
+    fetch = get_tool("fetch_url")
+    r = fetch.execute(url="file:///etc/passwd")
+    assert "only http" in r

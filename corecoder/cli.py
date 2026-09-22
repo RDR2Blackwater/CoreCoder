@@ -16,7 +16,7 @@ from .agent import Agent
 from .config import Config
 from .hooks import load_hooks
 from .llm import LLM, LiteLLM
-from .mcp import load_mcp_tools
+from .mcp import load_mcp_tools, shutdown_mcp_clients
 from .permissions import Permission
 from .session import list_sessions, load_session, save_session
 from .tools import ALL_TOOLS
@@ -96,27 +96,30 @@ def main():
         hooks=load_hooks(),
     )
 
-    # resume saved session
-    if args.resume:
-        loaded = load_session(args.resume)
-        if loaded:
-            agent.messages, loaded_model = loaded
-            # restore the model from the saved session unless overridden by CLI
-            if not args.model:
-                agent.llm.model = loaded_model
-                config.model = loaded_model
-            console.print(f"[green]Resumed session: {args.resume} (model: {agent.llm.model})[/green]")
-        else:
-            console.print(f"[red]Session '{args.resume}' not found.[/red]")
-            sys.exit(1)
+    try:
+        # resume saved session
+        if args.resume:
+            loaded = load_session(args.resume)
+            if loaded:
+                agent.messages, loaded_model = loaded
+                # restore the model from the saved session unless overridden by CLI
+                if not args.model:
+                    agent.llm.model = loaded_model
+                    config.model = loaded_model
+                console.print(f"[green]Resumed session: {args.resume} (model: {agent.llm.model})[/green]")
+            else:
+                console.print(f"[red]Session '{args.resume}' not found.[/red]")
+                sys.exit(1)
 
-    # one-shot mode
-    if args.prompt:
-        _run_once(agent, args.prompt)
-        return
+        # one-shot mode
+        if args.prompt:
+            _run_once(agent, args.prompt)
+            return
 
-    # interactive REPL
-    _repl(agent, config)
+        # interactive REPL
+        _repl(agent, config)
+    finally:
+        shutdown_mcp_clients()
 
 
 def _ask_permission(tool_name: str, arguments: dict) -> str:
